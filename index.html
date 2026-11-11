@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>Puckolo</title>
+<meta name="theme-color" content="#0b0b0b">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Puckolo">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" href="icons/icon-192.png">
+<style>
+  :root {
+    --black: #0b0b0b;
+    --gold: #fcb514;
+    --white: #f7f5ef;
+    --steel: #3d4248;
+    --blue: #9cc3e5;
+    --red: #b3192b;
+    --muted: #8b8f94;
+    --safe-t: env(safe-area-inset-top, 0px);
+    --safe-b: env(safe-area-inset-bottom, 0px);
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; height: 100%; background: var(--black); color: var(--white);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+  body { overscroll-behavior: none; }
+  button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; }
+  .screen { display: none; min-height: 100%; }
+  .screen.on { display: flex; }
+
+  /* ── Setup ── */
+  #setup { flex-direction: column; padding: calc(28px + var(--safe-t)) 20px calc(24px + var(--safe-b)); gap: 22px; max-width: 520px; margin: 0 auto; }
+  .logo { text-align: center; }
+  .logo h1 { margin: 0; font-size: 52px; font-weight: 900; letter-spacing: -1px; color: var(--gold); font-style: italic; }
+  .logo h1 span { color: var(--white); }
+  .logo p { margin: 4px 0 0; color: var(--muted); font-size: 15px; }
+  .label { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted); margin-bottom: 8px; }
+  .add { display: flex; gap: 8px; }
+  .add input { flex: 1; min-width: 0; background: #1a1a1a; border: 2px solid #2a2a2a; color: var(--white); border-radius: 12px;
+    padding: 14px; font-size: 17px; outline: none; }
+  .add input:focus { border-color: var(--gold); }
+  .add button { background: var(--gold); color: var(--black); font-weight: 800; border-radius: 12px; padding: 0 18px; font-size: 17px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; min-height: 8px; }
+  .chip { background: #1f1f1f; border: 1px solid #333; border-radius: 999px; padding: 8px 8px 8px 14px; display: flex; align-items: center; gap: 6px; font-weight: 600; }
+  .chip button { width: 24px; height: 24px; border-radius: 50%; background: #333; font-size: 14px; line-height: 1; }
+  .seg { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .seg.three { grid-template-columns: 1fr 1fr 1fr; }
+  .seg button { background: #1a1a1a; border: 2px solid #2a2a2a; border-radius: 12px; padding: 12px 8px; text-align: center; }
+  .seg button b { display: block; font-size: 16px; }
+  .seg button small { display: block; color: var(--muted); font-size: 12px; margin-top: 2px; }
+  .seg button.sel { border-color: var(--gold); background: #231c06; }
+  .seg button.sel b { color: var(--gold); }
+  .start { background: var(--gold); color: var(--black); font-weight: 900; font-size: 20px; border-radius: 16px; padding: 18px; text-transform: uppercase; letter-spacing: 1px; }
+  .start:disabled { opacity: .35; }
+  .hint { color: var(--muted); font-size: 13px; text-align: center; margin-top: -12px; }
+  .live-box { border: 2px dashed var(--gold); border-radius: 14px; padding: 14px; }
+  .live-box ul { margin: 8px 0 10px; padding-left: 18px; }
+  .live-box li { margin: 6px 0; line-height: 1.35; }
+  .live-box button { color: var(--gold); font-weight: 700; font-size: 14px; padding: 0; }
+  .fine { color: #5d6166; font-size: 12px; text-align: center; margin-top: auto; }
+
+  /* ── Game ── */
+  #game { flex-direction: column; position: fixed; inset: 0; transition: background .25s, color .25s; user-select: none; -webkit-user-select: none; }
+  .top { display: flex; justify-content: space-between; align-items: center; padding: calc(12px + var(--safe-t)) 16px 0; }
+  .top button { width: 40px; height: 40px; border-radius: 50%; background: rgba(0,0,0,.18); font-size: 18px; font-weight: 700; }
+  .count { font-weight: 700; font-size: 14px; opacity: .7; }
+  .card { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 20px 26px; }
+  .type { font-size: 14px; font-weight: 900; text-transform: uppercase; letter-spacing: 3px; opacity: .75; margin-bottom: 14px; }
+  .text { font-size: clamp(24px, 7vw, 34px); font-weight: 800; line-height: 1.22; }
+  .text b { text-decoration: underline; text-decoration-thickness: 3px; text-underline-offset: 4px; }
+  .answer { margin-top: 26px; font-size: clamp(19px, 5.4vw, 24px); font-weight: 700; padding: 16px 18px; border-radius: 14px; background: rgba(0,0,0,.12); display: none; }
+  .answer.on { display: block; animation: pop .25s ease-out; }
+  .tap { text-align: center; padding: 0 0 calc(18px + var(--safe-b)); font-size: 14px; font-weight: 700; opacity: .55; }
+  .rules { display: flex; gap: 6px; overflow-x: auto; padding: 0 16px 10px; scrollbar-width: none; }
+  .rules::-webkit-scrollbar { display: none; }
+  .rules span { flex: none; max-width: 78vw; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 12px; font-weight: 700;
+    border-radius: 999px; padding: 6px 10px; background: rgba(0,0,0,.18); }
+  .rules span.live::before { content: "● "; color: var(--gold); }
+  .text-in { animation: slide .22s ease-out; }
+  @keyframes slide { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+  @keyframes pop { from { opacity: 0; transform: scale(.96); } to { opacity: 1; transform: none; } }
+
+  /* card colors */
+  .t-dare    { background: var(--gold);  color: var(--black); }
+  .t-trivia  { background: var(--blue);  color: var(--black); }
+  .t-group   { background: var(--black); color: var(--gold); }
+  .t-versus  { background: var(--white); color: var(--black); }
+  .t-vote    { background: var(--steel); color: var(--white); }
+  .t-rule    { background: var(--red);   color: var(--white); }
+  .t-live    { background: var(--black); color: var(--white); box-shadow: inset 0 0 0 6px var(--gold); }
+  .t-end     { background: #262a2e;      color: var(--white); }
+  .t-over    { background: var(--black); color: var(--gold); }
+  .t-group .rules span, .t-live .rules span, .t-over .rules span { background: rgba(255,255,255,.1); }
+  .t-live .type { color: var(--gold); opacity: 1; }
+
+  .over-btns { display: grid; gap: 10px; margin-top: 28px; }
+  .over-btns button { background: var(--gold); color: var(--black); font-weight: 800; font-size: 17px; border-radius: 14px; padding: 15px; }
+  .over-btns button.alt { background: #222; color: var(--white); }
+  .over-list { margin: 14px 0 0; padding-left: 20px; font-size: 17px; font-weight: 600; color: var(--white); }
+  .over-list li { margin: 8px 0; line-height: 1.35; }
+</style>
+</head>
+<body>
+
+<!-- ───────── SETUP ───────── -->
+<section id="setup" class="screen on">
+  <div class="logo">
+    <h1>PUCK<span>OLO</span></h1>
+    <p>A Pens drinking game. Let's go Pens.</p>
+  </div>
+
+  <div>
+    <div class="label">Players</div>
+    <form class="add" id="addForm" autocomplete="off">
+      <input id="nameInput" placeholder="Add a name" maxlength="18" enterkeyhint="done">
+      <button type="submit">Add</button>
+    </form>
+    <div class="chips" id="chips"></div>
+  </div>
+
+  <div>
+    <div class="label">Mode</div>
+    <div class="seg" id="modeSeg">
+      <button data-v="pregame"><b>Pregame</b><small>~40 cards</small></button>
+      <button data-v="intermission"><b>Intermission</b><small>~15 cards + live rules</small></button>
+    </div>
+  </div>
+
+  <div>
+    <div class="label">Sips</div>
+    <div class="seg three" id="levelSeg">
+      <button data-v="easy"><b>Easy</b><small>light night</small></button>
+      <button data-v="normal"><b>Normal</b><small>standard</small></button>
+      <button data-v="heavy"><b>Heavy</b><small>no ride home needed</small></button>
+    </div>
+  </div>
+
+  <div class="live-box" id="liveBox" hidden>
+    <div class="label" style="color:var(--gold)">Live rules in effect</div>
+    <ul id="liveList"></ul>
+    <button id="clearLive">Clear these rules</button>
+  </div>
+
+  <button class="start" id="startBtn" disabled>Drop the puck</button>
+  <div class="hint" id="startHint">Add at least 2 players</div>
+
+  <div class="fine">Fan-made game. Not affiliated with the Pittsburgh Penguins or the NHL. Drink responsibly.</div>
+</section>
+
+<!-- ───────── GAME ───────── -->
+<section id="game" class="screen">
+  <div class="top">
+    <button id="exitBtn" aria-label="Exit">✕</button>
+    <div class="count" id="count"></div>
+    <button id="skipBtn" aria-label="Skip card">↷</button>
+  </div>
+  <div class="card" id="card">
+    <div class="type" id="type"></div>
+    <div class="text" id="text"></div>
+    <div class="answer" id="answer"></div>
+    <div id="extra"></div>
+  </div>
+  <div class="rules" id="rules"></div>
+  <div class="tap" id="tap">Tap to continue</div>
+</section>
+
+<script src="deck.js"></script>
+<script>
+(() => {
+  // ───────── storage (wrapped: some browsers block it) ─────────
+  const store = {
+    get(k, d) { try { const v = localStorage.getItem("puckolo:" + k); return v == null ? d : JSON.parse(v); } catch { return d; } },
+    set(k, v) { try { localStorage.setItem("puckolo:" + k, JSON.stringify(v)); } catch {} },
+  };
+
+  // ───────── settings ─────────
+  const SIPS = {
+    easy:   { s1: 1, s2: 1, s3: 2, finish: "take 3 sips" },
+    normal: { s1: 1, s2: 2, s3: 3, finish: "finish your drink" },
+    heavy:  { s1: 2, s2: 3, s3: 4, finish: "finish your drink" },
+  };
+  const LABELS = { dare: "Dare", trivia: "Trivia", group: "Everyone", versus: "Faceoff", vote: "Vote",
+                   rule: "New rule", live: "Live rule · until next intermission", end: "Rule over", over: "Final horn" };
+
+  let players = store.get("players", []);
+  let mode = store.get("mode", "pregame");
+  let level = store.get("level", "normal");
+  let liveRules = store.get("liveRules", []);   // persists between intermissions
+
+  // ───────── helpers ─────────
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const rand = (n) => Math.floor(Math.random() * n);
+  const shuffle = (a) => { for (let i = a.length - 1; i > 0; i--) { const j = rand(i + 1); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+  const hash = (s) => { let h = 0; for (const c of s) h = (h * 31 + c.charCodeAt(0)) | 0; return h.toString(36); };
+  const sips = (n) => n + (n === 1 ? " sip" : " sips");
+
+  // ───────── setup screen ─────────
+  function renderSetup() {
+    $("chips").innerHTML = players.map((p, i) =>
+      `<span class="chip">${esc(p)}<button data-i="${i}" aria-label="Remove ${esc(p)}">✕</button></span>`).join("");
+    document.querySelectorAll("#modeSeg button").forEach((b) => b.classList.toggle("sel", b.dataset.v === mode));
+    document.querySelectorAll("#levelSeg button").forEach((b) => b.classList.toggle("sel", b.dataset.v === level));
+    $("startBtn").disabled = players.length < 2;
+    $("startHint").style.visibility = players.length < 2 ? "visible" : "hidden";
+    $("liveBox").hidden = liveRules.length === 0;
+    $("liveList").innerHTML = liveRules.map((r) => `<li>${r}</li>`).join("");
+  }
+  $("addForm").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const name = $("nameInput").value.trim();
+    if (name && !players.some((p) => p.toLowerCase() === name.toLowerCase()) && players.length < 12) {
+      players.push(name); store.set("players", players);
+    }
+    $("nameInput").value = "";
+    renderSetup();
+  });
+  $("chips").addEventListener("click", (e) => {
+    const i = e.target.dataset.i;
+    if (i != null) { players.splice(+i, 1); store.set("players", players); renderSetup(); }
+  });
+  $("modeSeg").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) { mode = b.dataset.v; store.set("mode", mode); renderSetup(); } });
+  $("levelSeg").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) { level = b.dataset.v; store.set("level", level); renderSetup(); } });
+  $("clearLive").addEventListener("click", () => { liveRules = []; store.set("liveRules", liveRules); renderSetup(); });
+
+  // ───────── filling in names + sips ─────────
+  let picks = {};
+  function pickPlayer(exclude) {
+    // fewest-picked player first, random tiebreak — keeps it fair
+    const pool = shuffle(players.filter((p) => p !== exclude));
+    pool.sort((a, b) => (picks[a] || 0) - (picks[b] || 0));
+    const p = pool[0]; picks[p] = (picks[p] || 0) + 1; return p;
+  }
+  function fill(text, who) {
+    const s = SIPS[level];
+    return esc(text)
+      .replace(/\{p\}/g, `<b>${esc(who.p)}</b>`)
+      .replace(/\{p2\}/g, `<b>${esc(who.p2)}</b>`)
+      .replace(/\{s([123])\}/g, (_, n) => sips(s["s" + n]))
+      .replace(/\{finish\}/g, s.finish);
+  }
+  // capitalize the start of the card and of each sentence (e.g. "Can't do it? Finish your drink.")
+  const cap = (html) => html
+    .replace(/^(<b>)?([a-z])/, (m, b, c) => (b || "") + c.toUpperCase())
+    .replace(/([.?!]\s+)([a-z])/g, (m, p, c) => p + c.toUpperCase());
+
+  // ───────── deck building ─────────
+  function buildDeck() {
+    const n = players.length;
+    const usable = DECK.filter((c) => !c.min || n >= c.min).map((c) => ({ ...c, id: hash(c.text) }));
+    let used = new Set(store.get("used", []));
+    const pick = (cards, k) => {
+      let fresh = cards.filter((c) => !used.has(c.id));
+      if (fresh.length < k) { cards.forEach((c) => used.delete(c.id)); fresh = cards.slice(); }  // ran out → recycle
+      return shuffle(fresh).slice(0, k);
+    };
+    const byType = (t) => usable.filter((c) => c.type === t);
+    // card mix per round, so it isn't all trivia
+    const MIX = {
+      pregame:      { trivia: 10, dare: 9, group: 7, vote: 5, versus: 4, rule: 5 },
+      intermission: { trivia: 3, dare: 3, group: 2, vote: 2, versus: 1, rule: 1, live: 3 },
+    }[mode];
+    const take = (t) => pick(byType(t), MIX[t] || 0);
+    let chosen;
+    if (mode === "pregame") {
+      chosen = shuffle(Object.keys(MIX).flatMap(take));
+    } else {
+      const lives = take("live");
+      const rules = take("rule").map((r) => ({ ...r, len: [3, 5] }));
+      const rest = ["trivia", "dare", "group", "vote", "versus"].flatMap(take);
+      chosen = shuffle([...rules, ...rest]);
+      // spread live rules through the round, none on the last 2 cards
+      lives.forEach((l, i) => chosen.splice(Math.min(chosen.length - 2, 1 + i * 4 + rand(3)), 0, l));
+    }
+    chosen.forEach((c) => used.add(c.id));
+    store.set("used", [...used]);
+    return chosen;
+  }
+
+  // ───────── game loop ─────────
+  let queue = [], idx = 0, total = 0, active = [], revealed = false, current = null;
+
+  function startGame() {
+    picks = {}; active = []; idx = 0;
+    queue = buildDeck();
+    total = queue.length;
+    if (mode === "intermission" && liveRules.length) {
+      queue.unshift({ type: "end", html: "End of the period. All live rules from last intermission are done:", list: liveRules.slice() });
+      liveRules = []; store.set("liveRules", liveRules);
+    }
+    show("game");
+    next();
+  }
+
+  function next() {
+    // tick down active rules; if one expired, show its end card first
+    if (current && current.type !== "end") {
+      for (const r of active) r.left--;
+    }
+    const done = active.find((r) => r.left <= 0);
+    if (done) {
+      active = active.filter((r) => r !== done);
+      return render({ type: "end", html: done.endHtml });
+    }
+    if (!queue.length) return finish();
+    const c = queue.shift();
+    if (c.type !== "end") idx++;
+    if (c.html) return render(c);
+
+    const usesP = /\{p\}/.test(c.text + (c.end || ""));
+    const usesP2 = /\{p2\}/.test(c.text + (c.end || ""));
+    const p = usesP || usesP2 ? pickPlayer() : "";
+    const p2 = usesP2 ? pickPlayer(p) : "";
+    const html = cap(fill(c.text, { p, p2 }));
+    const card = { type: c.type, html };
+    if (c.a) card.answer = esc(c.a);
+    if (c.type === "rule") {
+      const [lo, hi] = c.len || [5, 9];
+      active.push({ html, endHtml: cap(fill(c.end, { p, p2 })), left: lo + rand(hi - lo + 1), live: false });
+    }
+    if (c.type === "live") { liveRules.push(html); store.set("liveRules", liveRules); }
+    render(card);
+  }
+
+  function render(card) {
+    current = card; revealed = false;
+    $("game").className = "screen on t-" + card.type;
+    $("type").textContent = LABELS[card.type];
+    $("text").innerHTML = card.html;
+    $("text").classList.remove("text-in"); void $("text").offsetWidth; $("text").classList.add("text-in");
+    $("answer").className = "answer"; $("answer").innerHTML = card.answer ? card.answer : "";
+    $("extra").innerHTML = card.list ? `<ul class="over-list">${card.list.map((r) => `<li>${r}</li>`).join("")}</ul>` : "";
+    $("count").textContent = card.type === "over" ? "" : `${idx} / ${total}`;
+    $("tap").textContent = card.answer ? "Tap to reveal the answer" : card.type === "over" ? "" : "Tap to continue";
+    const chips = active.map((r) => `<span>${r.html.replace(/<[^>]+>/g, "")}</span>`)
+      .concat(liveRules.map((r) => `<span class="live">${r.replace(/<[^>]+>/g, "")}</span>`));
+    $("rules").innerHTML = card.type === "over" ? "" : chips.join("");
+  }
+
+  function finish() {
+    active = [];
+    const card = { type: "over", html: mode === "intermission" ? "That's the intermission. Back to your seats." : "That's the game. Let's go Pens." };
+    render(card);
+    let extra = "";
+    if (mode === "intermission" && liveRules.length) {
+      extra += `<div class="type" style="margin:26px 0 0;opacity:1">Live until next intermission</div><ul class="over-list">${liveRules.map((r) => `<li>${r}</li>`).join("")}</ul>`;
+    }
+    extra += `<div class="over-btns">
+        <button data-act="again">Play another ${mode === "intermission" ? "intermission" : "round"}</button>
+        <button class="alt" data-act="home">Back to setup</button></div>`;
+    $("extra").innerHTML = extra;
+  }
+
+  $("game").addEventListener("click", (e) => {
+    const act = e.target.closest("[data-act]");
+    if (act) { e.stopPropagation(); return act.dataset.act === "again" ? startGame() : (show("setup"), renderSetup()); }
+    if (e.target.closest(".top") || e.target.closest(".rules")) return;
+    if (!current || current.type === "over") return;
+    if (current.answer && !revealed) { revealed = true; $("answer").classList.add("on"); $("tap").textContent = "Tap to continue"; return; }
+    next();
+  });
+  $("skipBtn").addEventListener("click", (e) => {
+    e.stopPropagation();
+    if (!current || current.type === "over") return;
+    // a skipped rule or live rule shouldn't stay in effect
+    if (current.type === "rule") active = active.filter((r) => r.html !== current.html);
+    if (current.type === "live") { liveRules = liveRules.filter((r) => r !== current.html); store.set("liveRules", liveRules); }
+    next();
+  });
+  $("exitBtn").addEventListener("click", (e) => {
+    e.stopPropagation();
+    if (current && current.type !== "over" && !confirmExit()) return;
+    show("setup"); renderSetup();
+  });
+  // simple two-tap exit confirm (no browser dialogs)
+  let exitArmed = 0;
+  function confirmExit() {
+    if (Date.now() - exitArmed < 2500) return true;
+    exitArmed = Date.now(); $("tap").textContent = "Tap ✕ again to quit"; return false;
+  }
+
+  function show(id) {
+    document.querySelectorAll(".screen").forEach((s) => s.classList.toggle("on", s.id === id));
+    if (id === "setup") { $("game").className = "screen"; current = null; }
+  }
+
+  $("startBtn").addEventListener("click", startGame);
+  renderSetup();
+
+  // ───────── offline support ─────────
+  if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
+    window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
+  }
+})();
+</script>
+</body>
+</html>
