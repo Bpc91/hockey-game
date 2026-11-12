@@ -5,13 +5,17 @@
 //   {p2}  a different player
 //   {s1} {s2} {s3}  sip amounts — scaled by the Easy / Normal / Heavy setting
 //   {finish}        "finish your drink" (Easy mode softens it to 3 sips)
+//   {rival}         a random rival (Flyers, Capitals, Rangers, Islanders, Bruins), same one for the whole card
 //
 // Card types:
-//   dare    — one person does something or drinks
+//   luck    — "Puck luck": a game situation for {p}. Tap reveals ONE random outcome from `outcomes`
+//             (mostly bad, some good). Write each outcome to finish the setup's sentence ("...").
+//   dare    — "In the crease": a low-key question or call for {p}. Avoid performances, dances or texting
+//             (the Lange goal call is the one exception Brett wants kept).
 //   trivia  — question; tap once to reveal the answer (put it in `a`)
 //   group   — everyone plays
 //   versus  — two players go head to head
-//   vote    — everyone points at someone
+//   vote    — everyone points at someone (all tagged min: 3 — pointless with 2 players)
 //   rule    — a temporary rule; `end` is shown after `len` [min, max] cards
 //   live    — game-event rule (Intermission mode only); lasts until the next intermission
 //
@@ -64,25 +68,91 @@ const DECK = [
   { type: "trivia", now: true, text: "{p}, who's the Pens' GM? Wrong = {s2}.", a: "Kyle Dubas" },
   { type: "trivia", now: true, text: "{p}, how many points did the Pens finish with in 2025–26? Within 4 is safe. Otherwise {s2}.", a: "98" },
 
-  // ───────────────────────── DARES ─────────────────────────
+  // ───────────────────────── PUCK LUCK (tap to see what happened) ─────────────────────────
+  { type: "luck", text: "{p}, Pens are down 1 to the {rival}. Goalie pulled, 90 seconds left...", outcomes: [
+    "...and the {rival} hit the empty net. Drink {s2}.",
+    "...they tie it with 8 seconds left! Then lose in the shootout. Drink {s3}.",
+    "...they tie it, then win it in overtime. Hand out {s3}.",
+    "...a shot rings off the post as the horn goes. Drink {s1}.",
+    "...{rival} empty-netter. Then another one. Drink {s3}." ] },
+  { type: "luck", text: "{p}, it's overtime against the {rival}...", outcomes: [
+    "...and the Pens win it on a 2-on-1. Hand out {s2}.",
+    "...and the {rival} score off a skate. Ugliest goal you've ever seen. Drink {s2}.",
+    "...Pens score! Offside review. Goal's off, and the {rival} win it a minute later. Drink {s3}." ] },
+  { type: "luck", text: "{p}, the {rival} score and the Pens challenge for offside...", outcomes: [
+    "...and win. Goal's off. Hand out {s2}.",
+    "...and lose. That's a delay-of-game penalty on top of it. Drink {s2}.",
+    "...and lose, and the {rival} score again on the power play. Drink {s3}." ] },
+  { type: "luck", text: "{p}, the Pens get a 5-minute power play against the {rival}...", outcomes: [
+    "...and score twice. Hand out {s2}.",
+    "...and give up a shorthanded goal. Drink {s2}.",
+    "...and don't even get a shot on net. Drink {s2}." ] },
+  { type: "luck", text: "{p}, it's a shootout against the {rival}...", outcomes: [
+    "...Pens go 3 for 3. Hand out {s3}.",
+    "...it goes 9 rounds and a {rival} defenseman ends it. Drink {s2}.",
+    "...Pens shooters go 0 for 3. Drink {s2}." ] },
+  { type: "luck", text: "{p}, Pens are up 3–0 on the {rival} after two...", outcomes: [
+    "...and blow it. Lose in overtime. Drink {s3}.",
+    "...and cruise to a shutout. Hand out {s2}.",
+    "...and hang on to win 3–2. You didn't breathe for 20 minutes. Drink {s1}." ] },
+  { type: "luck", text: "{p}, it's Game 7 against the {rival}...", outcomes: [
+    "...and the Pens win it. Hand out {s3}.",
+    "...and lose in double overtime. {finish}.",
+    "...and the {rival} goalie stands on his head. Pens lose 1–0. Drink {s3}." ] },
+  { type: "luck", text: "{p}, the puck takes a weird bounce off the end boards...", outcomes: [
+    "...right onto a Pens stick. Goal. Hand out {s2}.",
+    "...right past the Pens goalie. Drink {s2}.",
+    "...and over the glass into your lap. Souvenir! Hand out {s3}." ] },
+  { type: "luck", text: "{p}, the refs are calling it tight tonight against the {rival}...", outcomes: [
+    "...Pens get four power plays. Hand out {s2}.",
+    "...every call goes the {rival}' way. Drink {s2}.",
+    "...a {rival} player dives and somehow draws a penalty. Drink {s2}." ] },
+  { type: "luck", text: "{p}, the Pens' starting goalie gets hurt in warmups...", outcomes: [
+    "...and the backup steals a win. Hand out {s3}.",
+    "...and the backup lets in five. Drink {s2}.",
+    "...and the backup gets pulled halfway through the second. Drink {s3}." ] },
+  { type: "luck", text: "{p}, you finally got seats on the glass...", outcomes: [
+    "...right behind the {rival} bench. All night. Drink {s1}.",
+    "...and you end up on the Jumbotron. Hand out {s2}.",
+    "...and a player flips you a puck in warmups. Hand out {s2}.",
+    "...and you spill a full beer before puck drop. Drink {s2}." ] },
+  { type: "luck", text: "{p}, you go to the concession stand at the end of the first...", outcomes: [
+    "...and miss two Pens goals. Drink {s2}.",
+    "...and there's no line. Hand out {s1}.",
+    "...and pay way too much for a beer. Drink {s1} to get your money's worth." ] },
+  { type: "luck", text: "{p}, you leave early to beat traffic. Pens are down 2 with five minutes left...", outcomes: [
+    "...and they come back and win. Drink {s3}.",
+    "...and they lose. Smart move. Hand out {s1}.",
+    "...and they lose, and you still sit in traffic for 40 minutes. Drink {s1}." ] },
+  { type: "luck", text: "{p}, a {rival} fan sits next to you and won't stop talking...", outcomes: [
+    "...and the Pens win 5–1. Hand out {s2}.",
+    "...and the {rival} win. He wants a high-five. Drink {s2}.",
+    "...and he spills his beer on you. Drink {s1}." ] },
+  { type: "luck", text: "{p}, you buy the jersey of the Pens' hottest player...", outcomes: [
+    "...and he's traded the next week. Drink {s2}.",
+    "...and he scores a hat trick that night. Hand out {s2}.",
+    "...and the name's spelled wrong on the back. Drink {s1}." ] },
+  { type: "luck", text: "{p}, the Pens are on a 4-game win streak and you're wearing your lucky shirt...", outcomes: [
+    "...then you wash it. Streak's over. Drink {s2}.",
+    "...and the streak hits 5. Hand out {s2}." ] },
+  { type: "luck", text: "{p}, it's trade deadline day...", outcomes: [
+    "...and the Pens land a big name. Hand out {s2}.",
+    "...and they trade your favorite player for a 4th-round pick. Drink {s2}.",
+    "...and they do nothing. Drink {s1}." ] },
+  { type: "luck", text: "{p}, you buy 50/50 raffle tickets at the game...", outcomes: [
+    "...and you win. Hand out {s3}.",
+    "...and you lose. Again. Drink {s1}.",
+    "...and the guy next to you wins. Drink {s1}." ] },
+
+  // ───────────────────────── IN THE CREASE (low-key, mostly no performing) ─────────────────────────
   { type: "dare", text: "{p}, give us your best Mike Lange goal call. {p2} rates it. Under a 6? Drink {s2}." },
   { type: "dare", text: "{p}, say one genuinely nice thing about the Flyers. Can't do it? {finish}." },
   { type: "dare", text: "{p}, name 5 current Penguins in 10 seconds. {p2} counts. Drink {s1} for each one you miss." },
   { type: "dare", text: "{p}, rank Mario, Sid, Geno and Jagr. If {p2} disagrees with any spot, you both drink {s1}." },
-  { type: "dare", text: "{p}, do your best Iceburgh dance for 10 seconds or drink {s2}." },
-  { type: "dare", text: "{p}, you're Sid at a press conference. {p2} asks a question — answer in the most boring way possible. Say anything interesting? Drink {s2}." },
-  { type: "dare", text: "{p}, hum the Pens goal song. {p2} has to get it in 5 seconds or {p2} drinks {s2}." },
-  { type: "dare", text: "{p}, text someone 'Let's go Pens' with zero context. Or drink {s3}." },
-  { type: "dare", text: "{p}, defend the most underrated Penguin ever for 20 seconds. Stall or stammer and drink {s2}." },
-  { type: "dare", text: "{p}, you're the GM. Trade {p2} for anything in the room. If {p2} accepts the deal, {p2} drinks {s2}. If not, you do." },
-  { type: "dare", text: "{p}, explain icing like you're a TV analyst in 15 seconds. {p2} judges. Fail = {s2}." },
-  { type: "dare", text: "{p}, show us your Geno celly. Full commitment or drink {s2}." },
+  { type: "dare", text: "{p}, who's the most underrated Penguin ever? If {p2} doesn't buy it, drink {s1}." },
   { type: "dare", text: "{p}, what's your worst hockey take of all time? Confess it or drink {s2}." },
-  { type: "dare", text: "{p}, recreate the Fleury save on Lidstrom. {p2} rates 1–10. Under 5? Drink {s2}." },
-  { type: "dare", text: "{p}, give {p2} a hockey pep talk like it's Game 7. Weak speech? You drink {s2}. Good speech? {p2} drinks {s1} from the hype." },
-  { type: "dare", text: "{p}, what's your earliest Pens memory? Tell it in 30 seconds or drink {s2}." },
+  { type: "dare", text: "{p}, what's your earliest Pens memory? Tell it or drink {s2}." },
   { type: "dare", text: "{p}, name a Pen from every decade: 70s, 80s, 90s, 00s, 10s, 20s. Drink {s1} per gap." },
-  { type: "dare", text: "{p}, impersonate Malkin's English for one full sentence. Refuse = {s2}." },
   { type: "dare", text: "{p}, swap a sip of your drink with {p2}'s. No complaints allowed." },
   { type: "dare", text: "{p}, if you could have a beer with any Penguin ever, who? {p2} has to approve your answer or you drink {s1}." },
 
@@ -103,7 +173,7 @@ const DECK = [
   { type: "group", text: "Waterfall for Mario's comeback. {p} starts drinking, and nobody can stop until the person before them stops." , min: 3 },
   { type: "group", text: "Everyone who has ever cried over the Penguins drinks {s1}. Be honest." },
   { type: "group", text: "Everyone who was alive for the '91 Cup drinks {s1}. Everyone who wasn't, hand out {s1}." },
-  { type: "group", text: "Quiet 'Let's go Pens' chant, then loud. Whoever is loudest hands out {s2}. Quietest drinks {s2}." },
+  { type: "group", text: "Everyone who's ever left a game early and missed a comeback drinks {s2}." },
   { type: "group", text: "Everyone drinks {s1} for Badger Bob. It's a great day for hockey." },
   { type: "group", text: "Cheers to the 2009 Cup. Everyone drinks {s1}, and {p} drinks one more for each of Max Talbot's two Game 7 goals." },
 
@@ -116,31 +186,28 @@ const DECK = [
   { type: "versus", text: "Faceoff: {p} vs {p2}. Guess Crosby's career goal total. Look it up — farther guess drinks {s2}." },
   { type: "versus", text: "Faceoff: {p} vs {p2}. Guess how many games Geno has played as a Penguin. Look it up — farther guess drinks {s2}." },
   { type: "versus", text: "Faceoff: {p} vs {p2}. Guess Mario's career points. Look it up — farther guess drinks {s2}." },
-  { type: "versus", text: "Faceoff: {p} vs {p2}. Best Iceburgh impression. Everyone else votes — or if it's just you two, the one who laughs first loses. Loser drinks {s2}." },
   { type: "versus", text: "Faceoff: {p} vs {p2}. Name Stanley Cup winning goal scorers for any NHL team. First to blank drinks {s2}." },
 
   // ───────────────────────── VOTE ─────────────────────────
-  { type: "vote", text: "On 3, point at who's most likely to end up on the Jumbotron. Most fingers drinks {s2}. Tie? Everyone drinks." },
-  { type: "vote", text: "On 3, point at who'd cry first when Sid retires. Most fingers drinks {s2}." },
-  { type: "vote", text: "On 3, point at who's most likely to spill a beer in the upper deck. Most fingers drinks {s2}." },
-  { type: "vote", text: "On 3, point at who's most likely to start a 'Let's go Pens' chant in a random bar. Most fingers hands out {s2}." },
-  { type: "vote", text: "On 3, point at who'd be the worst ref. Most fingers drinks {s2}." },
-  { type: "vote", text: "On 3, point at who's most likely to buy a jersey of a guy who gets traded a week later. Most fingers drinks {s2}." },
-  { type: "vote", text: "On 3, point at who'd last longest arguing with a Flyers fan. Most fingers hands out {s2}." },
-  { type: "vote", text: "On 3, point at who's the bigger bandwagoner. Most fingers drinks {s2}." },
-  { type: "vote", text: "On 3, point at who'd make a better Penguins enforcer. Most fingers hands out {s2}." },
-  { type: "vote", text: "On 3, point at who'd get kicked out of the arena first. Most fingers drinks {s2}." },
+  { type: "vote", text: "On 3, point at who's most likely to end up on the Jumbotron. Most fingers drinks {s2}. Tie? Everyone drinks.", min: 3 },
+  { type: "vote", text: "On 3, point at who'd cry first when Sid retires. Most fingers drinks {s2}.", min: 3 },
+  { type: "vote", text: "On 3, point at who's most likely to spill a beer in the upper deck. Most fingers drinks {s2}.", min: 3 },
+  { type: "vote", text: "On 3, point at who's most likely to start a 'Let's go Pens' chant in a random bar. Most fingers hands out {s2}.", min: 3 },
+  { type: "vote", text: "On 3, point at who'd be the worst ref. Most fingers drinks {s2}.", min: 3 },
+  { type: "vote", text: "On 3, point at who's most likely to buy a jersey of a guy who gets traded a week later. Most fingers drinks {s2}.", min: 3 },
+  { type: "vote", text: "On 3, point at who'd last longest arguing with a Flyers fan. Most fingers hands out {s2}.", min: 3 },
+  { type: "vote", text: "On 3, point at who's the bigger bandwagoner. Most fingers drinks {s2}.", min: 3 },
+  { type: "vote", text: "On 3, point at who'd make a better Penguins enforcer. Most fingers hands out {s2}.", min: 3 },
+  { type: "vote", text: "On 3, point at who'd get kicked out of the arena first. Most fingers drinks {s2}.", min: 3 },
 
   // ───────────────────────── RULES (last a few cards) ─────────────────────────
   { type: "rule", len: [5, 9], text: "Flyers swear jar: anyone who says 'Flyers' or 'Philly' drinks {s1}.", end: "The swear jar is closed. Say 'Flyers' freely (but why would you)." },
   { type: "rule", len: [4, 7], text: "{p} is in the penalty box. No talking. Every word costs {s1}.", end: "{p}'s penalty is over — they're back on the ice and can talk again." },
   { type: "rule", len: [6, 10], text: "{p} gives everyone a hockey nickname. Use anyone's real name and drink {s1}.", end: "Nicknames are retired. Real names are back." },
   { type: "rule", len: [5, 8], text: "Canada rule: {p} has to end every sentence with 'eh'. Each miss = {s1}.", end: "{p} has left Canada. No more 'eh'." },
-  { type: "rule", len: [4, 7], text: "{p} has to narrate everything {p2} does like Mike Lange. Silence = {s1}.", end: "{p} is off the broadcast." },
   { type: "rule", len: [5, 9], text: "Shootout hands: everyone drinks with their non-dominant hand. Slip up = {s1}.", end: "Dominant hands are back." },
   { type: "rule", len: [5, 9], text: "{p} wears the C. Whenever {p} drinks, everyone drinks.", end: "{p} hands back the C." },
   { type: "rule", len: [5, 8], text: "Cap space: nobody can say a number. Each slip = {s1}.", end: "Numbers are back. The cap is cleared." },
-  { type: "rule", len: [4, 7], text: "{p} has to waddle like a penguin any time they get up.", end: "{p} can walk like a human again." },
   { type: "rule", len: [5, 9], text: "Ref's whistle: nobody can say the word 'drink'. Slip = {s1}.", end: "The whistle's done. Say 'drink' all you want." },
   { type: "rule", len: [5, 9], text: "Power play: {p} is on the man advantage — every time {p} drinks, {p2} drinks too.", end: "The power play is over. {p2} is off the hook." },
   { type: "rule", len: [4, 7], text: "Before every sip, you have to say 'Let's go Pens'. Forget it and drink {s1} extra.", end: "The chant requirement is lifted." },
@@ -154,7 +221,7 @@ const DECK = [
   { type: "live", text: "Every time the goal song plays: {p} and {p2} cheers and drink {s1}." },
   { type: "live", text: "Other team scores: {p} drinks {s2}. Pens score: {p} hands out {s2}." },
   { type: "live", text: "Puck hits the post or crossbar: everyone drinks {s2}." },
-  { type: "live", text: "Every TV timeout: {p2} picks a dare for {p}." },
+  { type: "live", text: "Every TV timeout: {p} vs {p2}, rock-paper-scissors. Loser drinks {s1}." },
   { type: "live", text: "Fight on the ice: everyone {finish}." },
   { type: "live", text: "Every point by Letang or Karlsson: everyone drinks {s1}." },
   { type: "live", text: "{p} picks a Penguin now. Every time the PA announces that player's name, {p2} drinks {s1}." },

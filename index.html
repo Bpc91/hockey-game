@@ -85,7 +85,8 @@
   @keyframes pop { from { opacity: 0; transform: scale(.96); } to { opacity: 1; transform: none; } }
 
   /* card colors */
-  .t-dare    { background: var(--gold);  color: var(--black); }
+  .t-luck    { background: var(--gold);  color: var(--black); }
+  .t-dare    { background: #1d2b38;      color: var(--blue); }
   .t-trivia  { background: var(--blue);  color: var(--black); }
   .t-group   { background: var(--black); color: var(--gold); }
   .t-versus  { background: var(--white); color: var(--black); }
@@ -183,7 +184,7 @@
     normal: { s1: 1, s2: 2, s3: 3, finish: "finish your drink" },
     heavy:  { s1: 2, s2: 3, s3: 4, finish: "finish your drink" },
   };
-  const LABELS = { dare: "Dare", trivia: "Trivia", group: "Everyone", versus: "Faceoff", vote: "Vote",
+  const LABELS = { luck: "Puck luck", dare: "In the crease", trivia: "Trivia", group: "Everyone", versus: "Faceoff", vote: "Vote",
                    rule: "New rule", live: "Live rule · until next intermission", end: "Rule over", over: "Final horn" };
 
   let players = store.get("players", []);
@@ -198,6 +199,7 @@
   const shuffle = (a) => { for (let i = a.length - 1; i > 0; i--) { const j = rand(i + 1); [a[i], a[j]] = [a[j], a[i]]; } return a; };
   const hash = (s) => { let h = 0; for (const c of s) h = (h * 31 + c.charCodeAt(0)) | 0; return h.toString(36); };
   const sips = (n) => n + (n === 1 ? " sip" : " sips");
+  const RIVALS = ["Flyers", "Flyers", "Capitals", "Rangers", "Islanders", "Bruins"];  // Flyers listed twice = shows up more
 
   // ───────── setup screen ─────────
   function renderSetup() {
@@ -241,7 +243,8 @@
       .replace(/\{p\}/g, `<b>${esc(who.p)}</b>`)
       .replace(/\{p2\}/g, `<b>${esc(who.p2)}</b>`)
       .replace(/\{s([123])\}/g, (_, n) => sips(s["s" + n]))
-      .replace(/\{finish\}/g, s.finish);
+      .replace(/\{finish\}/g, s.finish)
+      .replace(/\{rival\}/g, who.rival || "");
   }
   // capitalize the start of the card and of each sentence (e.g. "Can't do it? Finish your drink.")
   const cap = (html) => html
@@ -261,9 +264,11 @@
     const byType = (t) => usable.filter((c) => c.type === t);
     // card mix per round, so it isn't all trivia
     const MIX = {
-      pregame:      { trivia: 10, dare: 9, group: 7, vote: 5, versus: 4, rule: 5 },
-      intermission: { trivia: 3, dare: 3, group: 2, vote: 2, versus: 1, rule: 1, live: 3 },
+      pregame:      { trivia: 10, luck: 8, dare: 3, group: 6, vote: 4, versus: 4, rule: 5 },
+      intermission: { trivia: 3, luck: 3, dare: 1, group: 2, vote: 1, versus: 1, rule: 1, live: 3 },
     }[mode];
+    // voting is pointless with 2 players: give those slots to puck luck and faceoffs instead
+    if (n < 3) { MIX.luck += Math.ceil(MIX.vote / 2); MIX.versus += Math.floor(MIX.vote / 2); MIX.vote = 0; }
     const take = (t) => pick(byType(t), MIX[t] || 0);
     let chosen;
     if (mode === "pregame") {
@@ -271,7 +276,7 @@
     } else {
       const lives = take("live");
       const rules = take("rule").map((r) => ({ ...r, len: [3, 5] }));
-      const rest = ["trivia", "dare", "group", "vote", "versus"].flatMap(take);
+      const rest = ["trivia", "luck", "dare", "group", "vote", "versus"].flatMap(take);
       chosen = shuffle([...rules, ...rest]);
       // spread live rules through the round, none on the last 2 cards
       lives.forEach((l, i) => chosen.splice(Math.min(chosen.length - 2, 1 + i * 4 + rand(3)), 0, l));
@@ -315,9 +320,11 @@
     const usesP2 = /\{p2\}/.test(c.text + (c.end || ""));
     const p = usesP || usesP2 ? pickPlayer() : "";
     const p2 = usesP2 ? pickPlayer(p) : "";
-    const html = cap(fill(c.text, { p, p2 }));
+    const who = { p, p2, rival: RIVALS[rand(RIVALS.length)] };
+    const html = cap(fill(c.text, who));
     const card = { type: c.type, html };
     if (c.a) card.answer = esc(c.a);
+    if (c.outcomes) card.answer = cap(fill(c.outcomes[rand(c.outcomes.length)], who));
     if (c.type === "rule") {
       const [lo, hi] = c.len || [5, 9];
       active.push({ html, endHtml: cap(fill(c.end, { p, p2 })), left: lo + rand(hi - lo + 1), live: false });
@@ -335,7 +342,7 @@
     $("answer").className = "answer"; $("answer").innerHTML = card.answer ? card.answer : "";
     $("extra").innerHTML = card.list ? `<ul class="over-list">${card.list.map((r) => `<li>${r}</li>`).join("")}</ul>` : "";
     $("count").textContent = card.type === "over" ? "" : `${idx} / ${total}`;
-    $("tap").textContent = card.answer ? "Tap to reveal the answer" : card.type === "over" ? "" : "Tap to continue";
+    $("tap").textContent = card.type === "luck" ? "Tap to see what happens" : card.answer ? "Tap to reveal the answer" : card.type === "over" ? "" : "Tap to continue";
     const chips = active.map((r) => `<span>${r.html.replace(/<[^>]+>/g, "")}</span>`)
       .concat(liveRules.map((r) => `<span class="live">${r.replace(/<[^>]+>/g, "")}</span>`));
     $("rules").innerHTML = card.type === "over" ? "" : chips.join("");

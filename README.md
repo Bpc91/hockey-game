@@ -32,6 +32,8 @@ The test checks the deck for mistakes (missing answers, typo'd `{tokens}`), play
 
 ## How the game works
 - **Pregame:** 40 cards. Rules (red cards) last a few cards, then a "Rule over" card ends them.
+- **Puck luck** (gold cards): a game situation, then tap to see what happened to you. Usually bad, sometimes good.
+- **Vote** cards only show up with 3+ players.
 - **Intermission:** 15 cards, including 3 **live rules** tied to the game that last until the next intermission. You can see them on the setup screen at any time.
 - **↷** skips a card. **✕** (tap twice) quits.
 - The game remembers which cards you've seen and deals fresh ones first.

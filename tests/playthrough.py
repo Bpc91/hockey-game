@@ -14,8 +14,8 @@ What it checks:
 import asyncio, os, re, shutil, socket, subprocess, sys, time
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-TOKENS = {"{p}", "{p2}", "{s1}", "{s2}", "{s3}", "{finish}"}
-TYPES = {"dare", "trivia", "group", "versus", "vote", "rule", "live"}
+TOKENS = {"{p}", "{p2}", "{s1}", "{s2}", "{s3}", "{finish}", "{rival}"}
+TYPES = {"luck", "dare", "trivia", "group", "versus", "vote", "rule", "live"}
 failures = []
 
 def fail(msg):
@@ -41,7 +41,9 @@ def check_deck():
         if not c.get("text"): fail(f"{where}: missing text")
         if c.get("type") == "trivia" and not c.get("a"): fail(f"{where}: trivia card has no answer (a)")
         if c.get("type") == "rule" and not c.get("end"): fail(f"{where}: rule card has no end text")
-        for t in re.findall(r"\{[^}]*\}", c.get("text", "") + c.get("end", "")):
+        if c.get("type") == "luck" and len(c.get("outcomes", [])) < 2: fail(f"{where}: luck card needs at least 2 outcomes")
+        if c.get("type") == "vote" and c.get("min", 0) < 3: fail(f"{where}: vote card should have min: 3")
+        for t in re.findall(r"\{[^}]*\}", c.get("text", "") + c.get("end", "") + " ".join(c.get("outcomes", []))):
             if t not in TOKENS: fail(f"{where}: unknown token {t}")
     counts = {}
     for c in deck: counts[c["type"]] = counts.get(c["type"], 0) + 1
@@ -64,6 +66,9 @@ async def play(page, mode, label):
         if "t-over" in cls: break
         txt = await page.inner_text("#text")
         if re.search(r"\{[^}]*\}", txt): fail(f"{label}: unfilled token on card: {txt}")
+        ans = await page.inner_text("#answer") if await page.is_visible("#answer") else ""
+        if re.search(r"\{[^}]*\}", ans): fail(f"{label}: unfilled token in answer: {ans}")
+        if "t-vote" in cls and "2 players" in label: fail(f"{label}: vote card dealt with only 2 players")
         if not txt.strip(): fail(f"{label}: blank card ({cls})")
         cards += 1
         await page.mouse.click(195, 420)
