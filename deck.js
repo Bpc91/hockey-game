@@ -57,6 +57,7 @@ const DECK = [
   { type: "trivia", text: "{p}, what number did Marc-André Fleury wear in Pittsburgh? Wrong = {s1}.", a: "29" },
   { type: "trivia", text: "{p}, the Pens and Red Wings met in back-to-back Finals. Which years? Wrong = {s2}.", a: "2008 (Detroit won) and 2009 (Pens won)" },
   { type: "trivia", text: "{p}, how many Norris Trophies has Erik Karlsson won? Wrong = {s2}.", a: "3" },
+  { type: "trivia", text: "{p}, in Feb 2001 one Pen had back-to-back hat tricks, starting with a 9–4 beatdown of the Flyers. Who? Wrong = {s2}.", a: "Alexei Kovalev" },
 
   // ───────────────────────── TRIVIA: CURRENT ─────────────────────────
   { type: "trivia", now: true, text: "{p}, who's the Pens' head coach, and which team was he an assistant for before? Drink {s1} per miss.", a: "Dan Muse — New York Rangers" },
@@ -160,6 +161,7 @@ const DECK = [
   { type: "group", text: "Everyone who owns a Crosby jersey drinks {s1}. Own a Malkin jersey? Hand out {s2}." },
   { type: "group", text: "Everyone who saw a game at the Igloo, raise a glass to the roof and drink {s2}." },
   { type: "group", text: "Toast to Geno's 21st season. Everyone drinks {s2}." , now: true },
+  { type: "group", text: "Toast Karlsson while he's still ours. Everyone drinks {s2}.", now: true },
   { type: "group", text: "Last one to touch something black and gold drinks {s2}." },
   { type: "group", text: "Everyone wearing Pens gear right now hands out {s1}. Not wearing any? Drink {s2}, bandwagoner." },
   { type: "group", text: "Category: Penguins goalies, all-time. {p} starts, go back and forth. First to blank or repeat drinks {s2}." },
@@ -224,6 +226,7 @@ const DECK = [
   { type: "live", text: "Every TV timeout: {p} vs {p2}, rock-paper-scissors. Loser drinks {s1}." },
   { type: "live", text: "Fight on the ice: everyone {finish}." },
   { type: "live", text: "Every point by Letang or Karlsson: everyone drinks {s1}." },
+  { type: "live", now: true, text: "Every Ben Kindel point: everyone drinks {s1}." },
   { type: "live", text: "{p} picks a Penguin now. Every time the PA announces that player's name, {p2} drinks {s1}." },
   { type: "live", text: "Pens power-play goal: {p} hands out {s3}." },
   { type: "live", text: "Every kiss cam or fan cam: {p} drinks {s1}." },
